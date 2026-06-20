@@ -5,6 +5,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body,#app{height:100%;width:100%;overflow:hidden}
 body{font-family:"Quicksand",system-ui,sans-serif;background:#e7a9b0;color:var(--ink);-webkit-font-smoothing:antialiased;touch-action:none}
+#app *{-webkit-touch-callout:none;user-select:none;}
 .stage{position:fixed;inset:0;opacity:0;pointer-events:none;transition:opacity 1.1s ease}
 .stage.on{opacity:1;pointer-events:auto}
 

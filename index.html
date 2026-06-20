@@ -108,6 +108,8 @@ if(qs.get("for"))  CONFIG.to   = qs.get("for");
 document.getElementById("fromName").textContent = CONFIG.from;
 document.getElementById("forName").textContent  = CONFIG.to;
 
+document.getElementById("app").addEventListener("contextmenu", e => e.preventDefault());
+
 const stages = {
   fly:  document.getElementById("flythrough"),
   card: document.getElementById("card"),
