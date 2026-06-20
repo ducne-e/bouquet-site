@@ -1,0 +1,313 @@
+:root{
+  --pink-1:#f3d3d6; --pink-2:#e7a9b0; --pink-3:#d98a96;
+  --rose:#c0392b; --ink:#6b4a4a; --paper:#fdf6e9;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body,#app{height:100%;width:100%;overflow:hidden}
+body{font-family:"Quicksand",system-ui,sans-serif;background:#e7a9b0;color:var(--ink);-webkit-font-smoothing:antialiased;touch-action:none}
+.stage{position:fixed;inset:0;opacity:0;pointer-events:none;transition:opacity 1.1s ease}
+.stage.on{opacity:1;pointer-events:auto}
+
+/* ---------- A. phun hoa từ trung tâm ---------- */
+#flythrough{background:#fefcf7; overflow:hidden; z-index:2}
+.burst-flower{
+  position:absolute;left:50%;top:50%;
+  opacity:0;pointer-events:none;
+  will-change:transform,opacity;
+  animation:burstOut 3.6s cubic-bezier(.15,.8,.35,1) forwards;
+}
+@keyframes burstOut{
+  0%  {opacity:0;transform:translate(-50%,-50%) scale(.12) rotate(0deg);}
+  10% {opacity:1;}
+  72% {opacity:.9;}
+  100%{opacity:0;transform:translate(calc(-50% + var(--tx)),calc(-50% + var(--ty))) scale(1) rotate(var(--rot));}
+}
+
+
+/* ---------- C/D. màn hình phong bì ---------- */
+#card{background:#fefcf7}
+#garland{position:absolute;top:-40px;left:50%;transform:translateX(-50%);
+  width:140vw;max-width:1700px;height:120px;
+  pointer-events:none;
+  filter:drop-shadow(0 18px 24px rgba(120,40,55,.22));
+  transition:transform 1.2s ease}
+.garland-flower{position:absolute;pointer-events:none;}
+.float-rose{position:absolute;width:120px;opacity:.9;pointer-events:none;
+  animation:drift 9s ease-in-out infinite}
+@keyframes drift{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-26px) rotate(8deg)}}
+.card-inner{position:relative;height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;text-align:center}
+.tap-hdr{position:absolute;top:90px;left:0;right:0;text-align:center;
+  font-size:14px;letter-spacing:.34em;color:#9a5f66;text-transform:uppercase}
+.namerow{font-size:15px;letter-spacing:.3em;text-transform:uppercase;color:#9a5f66}
+.namerow b{font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:500;
+  font-size:34px;letter-spacing:.02em;text-transform:none;margin-left:.4em;color:#7a4750}
+#env{width:300px;max-width:74vw;cursor:pointer;
+  filter:drop-shadow(0 20px 30px rgba(120,40,55,.28));
+  animation:bob 5s ease-in-out infinite;transition:transform .5s ease}
+#env:hover{transform:scale(1.04)}
+#env.opening{animation:envOpen 1s ease forwards}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes envOpen{to{transform:scale(2.4);opacity:0}}
+@keyframes envShake{
+  0%,100%{transform:rotate(0) scale(1)}
+  20%{transform:rotate(-6deg) scale(1.04)}
+  50%{transform:rotate(5deg) scale(1.04)}
+  80%{transform:rotate(-3deg) scale(1.02)}
+}
+#env.shake{animation:envShake .38s ease !important}
+
+
+/* ---------- E. bảng kỷ niệm ---------- */
+#book{background:linear-gradient(rgba(255,255,255,.65),rgba(255,255,255,.65)),url(assets/botanical-pattern.jpg) center/cover;cursor:grab}
+#book.grab{cursor:grabbing}
+#board{position:absolute;left:50%;top:50%;width:0;height:0;will-change:transform}
+.bg-ghost{position:absolute;opacity:.16;filter:grayscale(.3);pointer-events:none;
+  transform:translate(-50%,-50%)}
+.card{position:absolute;transform:translate(-50%,-50%);
+  filter:drop-shadow(0 14px 26px rgba(90,40,45,.28));cursor:grab;user-select:none;
+  transition:box-shadow .2s}
+.card.drag{cursor:grabbing;z-index:999}
+.bouquet-deco{
+  position:absolute;
+  width:330px;
+  left:-260px;top:-50px;
+  transform:rotate(-14deg);
+  pointer-events:none;}
+.card.card-bare{filter:none;overflow:visible;background:none}
+.bouquet-float{width:390px;display:block;
+  filter:drop-shadow(0 14px 28px rgba(90,40,45,.38));
+  -webkit-user-drag:none;user-select:none;pointer-events:none;}
+.tape{position:absolute;top:-12px;left:50%;width:78px;height:26px;transform:translateX(-50%) rotate(-3deg);
+  background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.5)}
+.polaroid{background:#fdf8ef;padding:14px 14px 40px;width:230px;border-radius:3px}
+.polaroid img{width:100%;display:block;border-radius:2px}
+.polaroid .num{position:absolute;bottom:12px;left:16px;font-size:12px;color:#b09a90;letter-spacing:.1em}
+.closeb{position:absolute;top:-8px;right:-8px;width:16px;height:16px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.22);
+  display:grid;place-items:center;font-size:9px;color:#b05;cursor:pointer;z-index:10;
+  opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;transform:scale(.6)}
+#card-spotlight>.card .closeb{opacity:1;pointer-events:auto;transform:scale(1)}
+/* thẻ lời nhắn */
+.msg{
+  background-color:#d0b38b;
+  background-image:
+    repeating-linear-gradient(transparent 0,transparent 27px,rgba(95,58,12,.38) 27px,rgba(95,58,12,.38) 28px),
+    linear-gradient(to right,transparent 31px,rgba(138,52,28,.28) 31px,rgba(138,52,28,.28) 32px,transparent 32px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65 0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 130% 80% at 18% 18%,rgba(218,182,118,.55) 0%,transparent 62%),
+    radial-gradient(ellipse 110% 120% at 82% 86%,rgba(148,102,44,.45) 0%,transparent 60%);
+  background-size:auto,auto,cover,cover,cover;
+  background-position:0 26px,0 0,0 0,0 0,0 0;
+  width:330px;border-radius:6px;padding:33px 32px 118px 38px;}
+.msg-dear,.msg-line{
+  font-family:"Cormorant Garamond",serif;font-style:italic;
+  font-size:17px;line-height:28px;color:#4a3020;
+  margin:0;text-align:left;word-break:break-word;font-weight:420;}
+.msg-dear{color:#6b4530;font-weight:630;}
+/* --- lật thẻ config --- */
+.card.card-flip{filter:none;}
+.msg-flip{perspective:1200px;width:330px;}
+.msg-flip-inner{
+  position:relative;transform-style:preserve-3d;
+  transition:transform .7s cubic-bezier(.4,0,.2,1);}
+.msg-flip.flipped .msg-flip-inner{transform:rotateY(180deg);}
+/* mặt trước: bìa thư "Thư cho bé" */
+.msg-cover{
+  position:absolute;inset:0;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  background:#e8d9c5;border-radius:6px;
+  box-shadow:0 14px 26px rgba(90,40,45,.28);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  pointer-events:auto;}
+.msg-cover-text{
+  font-family:"Dancing Script",cursive;font-size:38px;font-weight:600;
+  color:#6b4530;text-align:center;line-height:1.4;margin:0;pointer-events:none;}
+.msg-flip.flipped .msg-cover{pointer-events:none;}
+/* mặt sau: nội dung thư (lật ra) */
+.msg.msg-letter{
+  transform:rotateY(180deg);
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  box-shadow:0 14px 26px rgba(90,40,45,.28);
+  pointer-events:none;}
+.msg-flip.flipped .msg.msg-letter{pointer-events:auto;}
+/* nút lật góc */
+.msg-flip-btn{
+  position:absolute;bottom:14px;right:14px;
+  width:28px;height:28px;border-radius:50%;
+  border:1.5px solid rgba(107,69,48,.32);
+  background:rgba(107,69,48,.11);font-size:14px;color:#6b4530;
+  cursor:pointer;display:grid;place-items:center;}
+.msg-flip-btn-back{bottom:auto;top:10px;right:10px;}
+/* board blur overlay */
+#board-blur{
+  display:none;position:fixed;inset:0;z-index:200;
+  backdrop-filter:blur(16px) saturate(1.12);
+  background:rgba(28,8,12,.3);}
+#board-blur.show{display:block}
+/* spotlight: card được focus nổi trên blur */
+#card-spotlight{position:fixed;inset:0;z-index:210;pointer-events:none}
+#card-spotlight>.card{pointer-events:auto}
+/* thẻ cào */
+.scratch{width:240px;background:#fdf8ef;padding:14px 14px 40px;border-radius:3px}
+.scratch .num{position:absolute;bottom:12px;left:16px;font-size:12px;color:#b09a90}
+.scratch-wrap{position:relative;width:212px;height:268px;border-radius:2px;overflow:hidden}
+.scratch-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.scratch-wrap canvas{position:absolute;inset:0;touch-action:none}
+/* thẻ media (YouTube / Spotify) */
+.media{width:300px;border-radius:14px;overflow:hidden;background:#fdf8ef;color:var(--ink);
+  font-family:"Quicksand",sans-serif}
+.yt .bar{display:flex;align-items:center;gap:10px;padding:10px 12px;font-size:12px;color:#9a6068}
+.yt .screen{height:150px;background:#e8c4c8 center/cover;display:grid;place-items:center;position:relative}
+.yt .screen iframe{width:100%;height:100%;border:0}
+.playb{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.85);
+  display:grid;place-items:center;cursor:pointer}
+.playb::after{content:"";border-left:16px solid #b05060;border-top:10px solid transparent;
+  border-bottom:10px solid transparent;margin-left:4px}
+.yt .foot{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;font-size:11px;color:#b09098}
+.sc-card{width:280px;border-radius:14px;background:#fdf8ef;color:var(--ink);padding:12px;
+  display:flex;gap:12px;align-items:center;font-family:"Quicksand",sans-serif;overflow:hidden}
+.sc-card iframe{width:100%;height:80px;border:0;border-radius:10px}
+.sc-icon{width:46px;height:46px;border-radius:8px;flex:0 0 auto;
+  background:linear-gradient(135deg,#d98a96,#c0687a);display:grid;place-items:center}
+.sc-icon::after{content:"☁";font-size:22px;color:#fff}
+.sc-meta{flex:1;min-width:0}
+.sc-title{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-sub{font-size:11px;color:#b07880;margin-top:2px}
+.sc-play{width:36px;height:36px;border-radius:50%;background:#d98a96;display:grid;
+  place-items:center;cursor:pointer;flex:0 0 auto}
+.sc-play::after{content:"";border-left:12px solid #fff;border-top:7px solid transparent;
+  border-bottom:7px solid transparent;margin-left:3px}
+.spotify{width:260px;border-radius:14px;background:#121212;color:#fff;padding:12px;display:flex;gap:12px;align-items:center}
+.spotify .art{width:54px;height:54px;border-radius:6px;background:linear-gradient(135deg,#e98aa6,#7a4750);flex:0 0 auto}
+.spotify .meta{flex:1;min-width:0}
+.spotify .t{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spotify .a{font-size:12px;color:#9a9a9a}
+.spotify .sp{width:34px;height:34px;border-radius:50%;background:#1db954;display:grid;place-items:center;cursor:pointer}
+.spotify .sp::after{content:"";border-left:11px solid #000;border-top:7px solid transparent;border-bottom:7px solid transparent;margin-left:3px}
+/* bản đồ kỷ niệm */
+.memmap{width:360px;background:#fdf8ef;border-radius:14px;padding:14px}
+.memmap .mh{font-size:11px;letter-spacing:.22em;color:#b58;text-transform:uppercase}
+.memmap h3{font-family:"Cormorant Garamond",serif;font-size:24px;color:#5a4a4a;margin:-2px 0 10px}
+.memmap .map{position:relative;height:230px;border-radius:10px;overflow:hidden}
+.memmap .lmap{position:absolute;inset:0;border-radius:10px;overflow:hidden;}
+.memmap .pin{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);
+  width:48px;height:48px;border-radius:50%;border:3px solid #fff;background:#ccc center/cover;
+  box-shadow:0 4px 10px rgba(0,0,0,.4)}
+.memmap .pin::after{content:"";position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);
+  border-top:10px solid #fff;border-left:7px solid transparent;border-right:7px solid transparent}
+.memmap .zoom{position:absolute;top:50px;right:24px;display:flex;flex-direction:column;gap:8px}
+.memmap .zoom button{width:34px;height:34px;border:0;border-radius:50%;cursor:pointer;
+  font-size:18px;color:#fff}
+.zin{background:#3aa76d}.zout{background:#d98a96}
+.hint-tap{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  font-family:"Cormorant Garamond",serif;font-style:italic;color:#fff;font-size:18px;
+  text-shadow:0 2px 10px rgba(120,40,55,.5);opacity:.9;pointer-events:none}
+/* ---------- nút & popup Happy Birthday ---------- */
+#open-popup{position:fixed;bottom:22px;right:22px;z-index:50;
+  width:52px;height:52px;border-radius:50%;border:none;
+  background:#fdf8ef;box-shadow:0 4px 16px rgba(120,40,55,.25);
+  font-size:24px;cursor:pointer;transition:transform .2s}
+#open-popup:active{transform:scale(.9)}
+#hb-popup{display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(90,40,45,.5);place-items:center}
+#hb-frame-wrap{position:relative;width:92vw;max-width:480px;height:85vh;
+  border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(90,40,45,.4)}
+#hb-frame{width:100%;height:100%;border:0;display:block}
+#close-popup{position:absolute;top:10px;right:10px;z-index:10;
+  width:32px;height:32px;border-radius:50%;border:none;
+  background:rgba(255,255,255,.85);font-size:14px;cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.2)}
+/* ---------- lightbox phóng to ảnh (long-press + f/2.8 blur) ---------- */
+#photo-lightbox{
+  display:none;position:fixed;inset:0;z-index:600;place-items:center;
+  backdrop-filter:blur(14px) saturate(1.15);
+  background:radial-gradient(ellipse at center,rgba(60,25,30,.38) 0%,rgba(35,8,12,.72) 100%);
+}
+#photo-lightbox.open{display:grid;animation:lbFadeIn .28s ease}
+#lightbox-panel{
+  display:flex;position:relative;overflow:visible;
+  border-radius:10px;
+  box-shadow:0 28px 72px rgba(50,15,20,.65),0 0 0 1px rgba(255,255,255,.07);
+  animation:lbScale .3s cubic-bezier(.34,1.46,.64,1);
+  max-height:82vh;
+}
+#lightbox-gif{
+  position:absolute;top:-36px;right:-36px;
+  width:88px;height:88px;object-fit:contain;
+  pointer-events:none;z-index:20;
+  filter:drop-shadow(0 4px 10px rgba(0,0,0,.35));
+}
+#lightbox-photo-side{
+  flex:0 0 auto;background:#100508;display:flex;align-items:center;
+  border-radius:10px 0 0 10px;overflow:hidden;
+}
+#lightbox-img{display:block;max-width:260px;max-height:72vh;object-fit:contain}
+#lightbox-note-side{
+  position:relative;width:320px;min-height:200px;background:#d0b38b;
+  display:flex;flex-direction:column;
+  border-radius:0 10px 10px 0;overflow:hidden;
+}
+#lightbox-close{
+  position:absolute;top:8px;right:8px;z-index:10;
+  width:28px;height:28px;border-radius:50%;border:none;
+  background:rgba(140,80,60,.14);font-size:13px;color:#7a5040;cursor:pointer;
+}
+#lightbox-note-body{
+  flex:1;padding:37px 16px 16px 34px;overflow-y:auto;
+  background-color:#d0b38b;
+  background-image:
+    repeating-linear-gradient(transparent 0,transparent 27px,rgba(95,58,12,.38) 27px,rgba(95,58,12,.38) 28px),
+    linear-gradient(to right,transparent 31px,rgba(138,52,28,.28) 31px,rgba(138,52,28,.28) 32px,transparent 32px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65 0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 130% 80% at 18% 18%,rgba(218,182,118,.4) 0%,transparent 62%),
+    radial-gradient(ellipse 110% 120% at 82% 86%,rgba(148,102,44,.35) 0%,transparent 60%);
+  background-size:auto,auto,cover,cover,cover;
+  background-attachment:local;
+  background-position:0 32px,0 0,0 0,0 0,0 0;
+}
+#lightbox-note-text{
+  font-family:"Cormorant Garamond",serif;font-style:italic;
+  font-size:22px;line-height:28px;color:#4a3020;
+  font-weight:420;white-space:pre-line;word-break:break-word;
+}
+@keyframes lbFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes lbScale{from{transform:scale(.75)}to{transform:scale(1)}}
+@keyframes hapticZoom{from{transform:scale(.32);opacity:0}to{transform:scale(1);opacity:1}}
+/* ---------- deck: card zoom overlay ---------- */
+#card-zoom{
+  display:none;position:fixed;inset:0;z-index:700;place-items:center;
+  backdrop-filter:blur(18px) saturate(1.15);
+  background:radial-gradient(ellipse at center,rgba(40,15,20,.35) 0%,rgba(20,5,10,.65) 100%);
+}
+#card-zoom.open{display:grid;animation:lbFadeIn .22s ease}
+#card-zoom-frame{
+  animation:hapticZoom .46s cubic-bezier(.34,1.56,.64,1);
+  display:flex;align-items:center;justify-content:center;
+  max-width:90vw;max-height:88vh;overflow:visible;
+}
+.zoom-photo-wrap{display:flex;flex-direction:column;align-items:center;gap:18px}
+#card-zoom-frame img,.zoom-photo-wrap img{
+  max-width:82vw;max-height:74vh;object-fit:contain;display:block;
+  border-radius:8px;box-shadow:0 24px 64px rgba(0,0,0,.55);
+}
+.zoom-note{
+  font-family:"Cormorant Garamond",serif;font-style:italic;
+  font-size:22px;color:rgba(248,235,220,.92);text-align:center;
+  text-shadow:0 2px 10px rgba(0,0,0,.45);margin:0;
+}
+#card-zoom-close{
+  position:fixed;top:14px;right:14px;z-index:10;
+  width:34px;height:34px;border-radius:50%;border:none;
+  background:rgba(255,255,255,.2);font-size:15px;color:#fff;cursor:pointer;
+}
+@media(max-width:600px){
+  #lightbox-panel{flex-direction:column;max-width:90vw}
+  #lightbox-img{max-width:88vw;max-height:44vh}
+  #lightbox-note-side{width:100%;min-height:160px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  #env,.float-rose,.burst-flower{animation:none!important}
+  #flythrough{display:none}
+}

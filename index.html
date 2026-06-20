@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>chuc mung sinh nhat em be</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Dancing+Script:wght@600&family=EB+Garamond:ital@0;1&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<audio id="bgm" src="assets/nhacnen.mp3" loop preload="auto"></audio>
+<div id="app">
+  <!-- A -->
+  <section id="flythrough" class="stage"></section>
+  <!-- C/D -->
+  <section id="card" class="stage">
+    <div id="garland"></div>
+    <div class="card-inner">
+      <div class="tap-hdr">Nhấn zô thư</div>
+      <div class="namerow">Từ <b id="fromName">Anh bé</b></div>
+      <img id="env" src="assets/envelope.png" alt="Envelope">
+      <div class="namerow">Đến <b id="forName">Em bé</b></div>
+    </div> 
+  </section>
+  <!-- E -->
+  <section id="book" class="stage">
+    <div id="board"></div>
+    <div class="hint-tap">Happy Birthday! ebee iuu</div>
+    <button id="open-popup" onclick="
+      const f=document.getElementById('hb-frame');
+      if(!f.src) f.src='../../Happy-Birthday-v6-main/index.html';
+      document.getElementById('hb-popup').style.display='grid';
+    ">🎂</button>
+  </section>
+
+  <!-- Lightbox phóng to ảnh (long-press) -->
+  <div id="photo-lightbox">
+    <div id="lightbox-panel">
+      <img id="lightbox-gif" src="" alt="">
+      <div id="lightbox-photo-side">
+        <img id="lightbox-img" src="" alt="">
+      </div>
+      <div id="lightbox-note-side">
+        <button id="lightbox-close">✕</button>
+        <div id="lightbox-note-body">
+          <p id="lightbox-note-text"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Board blur overlay (card focus) -->
+  <div id="board-blur"></div>
+  <!-- Spotlight layer: card được chọn nổi trên blur -->
+  <div id="card-spotlight"></div>
+
+  <!-- Card zoom overlay -->
+  <div id="card-zoom">
+    <div id="card-zoom-frame"></div>
+    <button id="card-zoom-close">✕</button>
+  </div>
+
+  <!-- Popup Happy Birthday -->
+  <div id="hb-popup">
+    <div id="hb-frame-wrap">
+      <button id="close-popup" onclick="document.getElementById('hb-popup').style.display='none'">✕</button>
+      <iframe id="hb-frame" src="" frameborder="0" allowfullscreen></iframe>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ============================================================
+   CẤU HÌNH — đổi nội dung quà ở đây (tên, ảnh, lời nhắn, nhạc...)
+   ============================================================ */
+const CONFIG = {
+  from: "Anh bé",
+  to: "Em bé",
+  message:
+    "I hope you take the time you need to rest, recover, and regain your " +
+    "strength. Wishing you comfort, peace, and a smooth recovery surrounded " +
+    "by people who care about you. I hope each day ahead feels a little " +
+    "easier and brighter until you’re feeling completely like yourself again",
+  yin: "You're the Yin",
+  yang: "to my yang",
+  photos: [
+    { src:"assets/photo01.jpg", num:"01", rot:-6, note:"anh yêu em", gif:"assets/g5.gif" },
+    { src:"assets/photo03.jpg", num:"03", rot:5,  note:"anh yêu em", gif:"assets/ngumpet.gif" },
+    { src:"assets/photo05.jpg", num:"05", rot:-3, note:"anh yêu em", gif:"assets/weee.gif" },
+    { src:"assets/photo04.jpg", num:"04", rot:4,  note:"anh yêu em", gif:"" },
+    { src:"assets/photo06.jpg", num:"06", rot:-5, note:"anh yêu em", gif:"" },
+  ],
+  youtube: { title:"Just the Two of Us", id:"b4iVv91Z6lY" },
+  spotify: { title:"Just the Two of Us", artist:"Bill Withers", uri:"track/68lbSrXDORS51pmyjZv712" },
+  map: { pin:"assets/photo01.jpg", lat:10.7769, lng:106.7009 }, // đổi lat/lng để chọn vị trí
+  soundcloud: { url:"https://soundcloud.com/mix-dbp/khmsn" },
+};
+
+/* đọc tham số ?from= / ?for= từ URL */
+const qs = new URLSearchParams(location.search);
+if(qs.get("from")) CONFIG.from = qs.get("from");
+if(qs.get("for"))  CONFIG.to   = qs.get("for");
+
+document.getElementById("fromName").textContent = CONFIG.from;
+document.getElementById("forName").textContent  = CONFIG.to;
+
+const stages = {
+  fly:  document.getElementById("flythrough"),
+  card: document.getElementById("card"),
+  book: document.getElementById("book"),
+};
+function show(el){ el.classList.add("on"); }
+function hide(el){ el.classList.remove("on"); }
+function stopAllAudio(){
+  document.getElementById("bgm").pause();
+  document.querySelectorAll('iframe[src*="youtube"]').forEach(f=>{
+    try{ f.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}','*'); }catch(e){}
+  });
+  document.querySelectorAll('iframe[src*="soundcloud"]').forEach(f=>{
+    try{ f.contentWindow.postMessage('{"method":"pause"}','*'); }catch(e){}
+  });
+}
+
+function buildGarland(){
+  const g = document.getElementById("garland");
+  const imgs = ["assets/mum_white.png","assets/rose_red.png","assets/peony_red.png","assets/rose_pink.png","assets/rose_white.png"];
+  const count = 26;
+  for(let i=0;i<count;i++){
+    const t = i/(count-1);
+    const sag = 4*t*(1-t);
+    const el = document.createElement("img");
+    el.src = imgs[i%imgs.length];
+    el.className = "garland-flower";
+    el.style.width = (156+sag*66)+"px";
+    el.style.left = (t*100)+"%";
+    el.style.top = (sag*85)+"px";
+    el.style.transform = `translateX(-50%) rotate(${(t-.5)*90}deg)`;
+    el.style.opacity = ".92";
+    g.appendChild(el);
+  }
+}
+
+function buildFlowerBurst(){
+  const ft = document.getElementById("flythrough");
+  ft.innerHTML = "";
+  const imgs = ["assets/mum_white.png","assets/rose_red.png","assets/peony_red.png","assets/rose_pink.png","assets/rose_white.png"];
+  const count = 150;
+  for(let i=0;i<count;i++){
+    const angle = (i/count)*Math.PI*2+(Math.random()-.5)*.5;
+    const dist = 30+Math.random()*55;
+    const el = document.createElement("img");
+    el.src = imgs[i%imgs.length];
+    el.className = "burst-flower";
+    el.style.width = (114+Math.random()*204)+"px";
+    el.style.setProperty("--tx",(Math.cos(angle)*dist)+"vw");
+    el.style.setProperty("--ty",(Math.sin(angle)*dist)+"vh");
+    el.style.setProperty("--rot",((Math.random()-.5)*720)+"deg");
+    el.style.animationDelay = (Math.random()*.4)+"s";
+    ft.appendChild(el);
+  }
+}
+
+/* ---------- trình tự intro: hiện thư luôn ---------- */
+function runIntro(){
+  show(stages.card);
+  spawnFloatRoses();
+}
+buildGarland();
+runIntro();
+
+function spawnFloatRoses(){
+  const inner = stages.card;
+  const imgs = ["assets/rose_pink.png","assets/rose_red.png","assets/rose_white.png"];
+  for(let i=0;i<6;i++){
+    const r = document.createElement("img");
+    r.className="float-rose"; r.src=imgs[i%3];
+    r.style.left = (8+Math.random()*84)+"%";
+    r.style.top  = (12+Math.random()*40)+"%";
+    r.style.width = (70+Math.random()*70)+"px";
+    r.style.animationDelay = (Math.random()*4)+"s";
+    r.style.animationDuration = (7+Math.random()*4)+"s";
+    inner.appendChild(r);
+  }
+}
+
+/* ---------- nhấn phong bì -> phun hoa -> bảng kỷ niệm ---------- */
+const env = document.getElementById("env");
+env.addEventListener("click", ()=>{
+  document.getElementById("bgm").play();
+  env.classList.add("shake");
+  document.getElementById("garland").style.transform="translateX(-50%) translateY(-120px)";
+
+  setTimeout(()=>{
+    env.classList.remove("shake");
+    env.classList.add("opening");
+    buildFlowerBurst();
+    show(stages.fly);
+
+    setTimeout(()=>{
+      hide(stages.fly);
+      hide(stages.card);
+      buildBook();
+      show(stages.book);
+    }, 3600);
+  }, 380);
+});
+
+/* ============================================================
+   BẢNG KỶ NIỆM — kéo nền + kéo từng thẻ
+   ============================================================ */
+const board = document.getElementById("board");
+let pan = { x:0, y:0 };
+
+function applyPan(){
+  board.style.transform = `translate(${pan.x}px,${pan.y}px)`;
+  stages.book.style.backgroundPosition = `calc(50% + ${pan.x}px) calc(50% + ${pan.y}px)`;
+}
+
+function makeCard(html, x, y, rot=0){
+  const c = document.createElement("div");
+  c.className = "card";
+  c.style.left = x+"px"; c.style.top = y+"px";
+  c.dataset.x = x; c.dataset.y = y; c.dataset.rot = rot;
+  c.style.transform = `translate(-50%,-50%) rotate(${rot}deg)`;
+  c.innerHTML = html;
+  board.appendChild(c);
+  enableDragCard(c);
+  return c;
+}
+
+function buildBook(){
+  if(board.childElementCount) return;
+
+  // ảnh mờ phong bì phía sau mọi thứ
+  const ghost = document.createElement("img");
+  ghost.className="bg-ghost"; ghost.src="assets/envelope.png";
+  ghost.style.left="40px"; ghost.style.top="60px"; ghost.style.width="520px";
+  board.appendChild(ghost);
+
+  // thẻ lời nhắn (giữa màn hình)
+  const msgCard = makeCard(`
+    <div class="msg-flip">
+      <div class="msg-flip-inner">
+        <div class="msg msg-letter">
+          <p class="msg-dear">dear :</p>
+          <p class="msg-line">${CONFIG.yin}</p>
+          <p class="msg-line">${CONFIG.yang}</p>
+          <p class="msg-line">${CONFIG.message}</p>
+        </div>
+        <div class="msg-cover">
+          <p class="msg-cover-text">Thư cho bé</p>
+        </div>
+      </div>
+    </div>`, 60, 40, -2);
+  msgCard.classList.add('card-flip');
+  { const fl=msgCard.querySelector('.msg-flip');
+    let mpd;
+    msgCard.addEventListener('pointerdown',e=>{
+      mpd={x:e.clientX,y:e.clientY};
+    });
+    msgCard.addEventListener('pointerup',e=>{
+      if(!mpd) return;
+      const moved=Math.abs(e.clientX-mpd.x)>8||Math.abs(e.clientY-mpd.y)>8;
+      mpd=undefined;
+      if(moved) return;
+      fl.classList.toggle('flipped');
+    });
+  }
+
+  // ảnh cào
+  const sc1 = makeCard(scratchHTML(CONFIG.photos[0]), -360, -120, CONFIG.photos[0].rot);
+  initScratch(sc1.querySelector("canvas"));
+  const sc2 = makeCard(scratchHTML(CONFIG.photos[1]), -330, 180,  CONFIG.photos[1].rot);
+  initScratch(sc2.querySelector("canvas"));
+  const sc3 = makeCard(scratchHTML(CONFIG.photos[2]),  300, 230,  CONFIG.photos[2].rot);
+  initScratch(sc3.querySelector("canvas"));
+  const sc4 = makeCard(scratchHTML(CONFIG.photos[3]),  420, -200, CONFIG.photos[3].rot);
+  initScratch(sc4.querySelector("canvas"));
+  const sc5 = makeCard(scratchHTML(CONFIG.photos[4]), -150, 420,  CONFIG.photos[4].rot);
+  initScratch(sc5.querySelector("canvas"));
+
+  // ảnh bouquet nổi (không khung)
+  const sc = makeCard(`<img class="bouquet-float" src="assets/bouquet.png" alt="" draggable="false">`, 0, 160, -8);
+  sc.classList.add('card-bare');
+  /* alpha hit-test: drag chỉ hoạt động trên pixel không trong suốt của bouquet */
+  { const hCvs=document.createElement('canvas');
+    const hCtx=hCvs.getContext('2d',{willReadFrequently:true});
+    const hImg=new Image();
+    hImg.onload=()=>{ hCvs.width=hImg.naturalWidth; hCvs.height=hImg.naturalHeight; hCtx.drawImage(hImg,0,0); };
+    hImg.src='assets/bouquet.png';
+    sc._alphaTest=(cx,cy)=>{
+      if(!hCvs.width) return true;
+      const el=sc.querySelector('.bouquet-float');
+      if(!el) return true;
+      const r=el.getBoundingClientRect();
+      const icx=r.left+r.width/2, icy=r.top+r.height/2;
+      const rad=(parseFloat(sc.dataset.rot)||0)*Math.PI/180;
+      const dx=cx-icx, dy=cy-icy;
+      /* unrotate điểm nhấp về toạ độ ảnh gốc */
+      const urx= dx*Math.cos(rad)+dy*Math.sin(rad);
+      const ury=-dx*Math.sin(rad)+dy*Math.cos(rad);
+      const W=el.offsetWidth, H=el.offsetHeight;
+      const px=Math.round((urx+W/2)/W*hCvs.width);
+      const py=Math.round((ury+H/2)/H*hCvs.height);
+      if(px<0||py<0||px>=hCvs.width||py>=hCvs.height) return false;
+      try{ return hCtx.getImageData(px,py,1,1).data[3]>15; }catch(e){ return true; }
+    };
+  }
+
+  wireLightbox();
+
+  // thẻ nhạc YouTube
+  const ytCard = makeCard(`
+    <span class="closeb">✕</span>
+    <div class="media yt">
+      <div class="bar yt-bar">♫ Đang tải...</div>
+      <div class="screen" data-yt="${CONFIG.youtube.id}">
+        <div class="playb"></div>
+      </div>
+      <div class="foot"><span>▶ YouTube Music</span></div>
+    </div>`, 470, 70, 5);
+  if(CONFIG.youtube.id){
+    fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${CONFIG.youtube.id}&format=json`)
+      .then(r=>r.json())
+      .then(d=>{ const b=ytCard.querySelector(".yt-bar"); if(b) b.textContent=`♫ ${d.title} — ${d.author_name}`; })
+      .catch(()=>{ const b=ytCard.querySelector(".yt-bar"); if(b) b.textContent="♫ YouTube Music"; });
+  }
+
+  // thẻ SoundCloud
+  const scCard = makeCard(`
+    <span class="closeb">✕</span>
+    <div class="sc-card" data-sc="${CONFIG.soundcloud.url}">
+      <div class="sc-icon"></div>
+      <div class="sc-meta">
+        <div class="sc-title sc-bar">Đang tải...</div>
+        <div class="sc-sub">SoundCloud</div>
+      </div>
+      <div class="sc-play"></div>
+    </div>`, 640, -80, 4);
+  fetch(`https://soundcloud.com/oembed?url=${encodeURIComponent(CONFIG.soundcloud.url)}&format=json`)
+    .then(r=>r.json())
+    .then(d=>{
+      const t=scCard.querySelector(".sc-title"); if(t) t.textContent=d.title;
+      const s=scCard.querySelector(".sc-sub"); if(s) s.textContent=d.author_name;
+    })
+    .catch(()=>{});
+
+  // thẻ bản đồ kỷ niệm
+  makeCard(`
+    <span class="closeb">✕</span>
+    <div class="memmap">
+      <div class="mh">Memory map</div>
+      <h3>Memory map</h3>
+      <div class="map">
+        <div class="lmap"></div>
+        <div class="zoom"><button class="zin">+</button><button class="zout">−</button></div>
+      </div>
+    </div>`, 120, 520, 2);
+
+  wireCardButtons();
+  clusterCards();
+  wireCardZoom();
+}
+
+/* ---------- deck: cụm thẻ lộn xộn + swipe cycle + click zoom ---------- */
+function clusterCards(){
+  const cards=Array.from(board.querySelectorAll('.card'));
+  const W=stages.book.offsetWidth, H=stages.book.offsetHeight;
+  const rx=W*0.36, ry=H*0.33;
+  cards.forEach((c,i)=>{
+    const a=(i/cards.length)*Math.PI*2+(Math.random()-.5)*1.3;
+    const r=0.28+Math.random()*0.72;
+    const cx=Math.cos(a)*rx*r+(Math.random()-.5)*44;
+    const cy=Math.sin(a)*ry*r+(Math.random()-.5)*32;
+    c.dataset.x=cx; c.dataset.y=cy;
+    c.style.left=cx+'px'; c.style.top=cy+'px';
+    c.style.zIndex=i+1;
+  });
+}
+function bringCardToTop(card){
+  const all=Array.from(board.querySelectorAll('.card'));
+  const max=Math.max(...all.map(c=>+(c.style.zIndex)||0));
+  if((+(card.style.zIndex)||0)<max) card.style.zIndex=max+1;
+}
+function cycleCards(dir){
+  const cards=Array.from(board.querySelectorAll('.card'))
+    .sort((a,b)=>(+(a.style.zIndex)||0)-(+(b.style.zIndex)||0));
+  if(!cards.length)return;
+  const n=cards.length;
+  if(dir==='left'){
+    const top=cards[n-1];
+    cards.slice(0,n-1).forEach((c,i)=>c.style.zIndex=i+2);
+    top.style.zIndex=1;
+  } else {
+    const bot=cards[0];
+    cards.slice(1).forEach((c,i)=>c.style.zIndex=i+1);
+    bot.style.zIndex=n;
+  }
+}
+/* ---------- haptic focus: phóng to thẻ + mờ nền ---------- */
+let focusedCard=null;
+/* haptic tại chỗ: nhấn → giữ 300ms → spring về */
+function hapticBounce(card){
+  const rot=parseFloat(card.dataset.rot)||0;
+  const base=`translate(-50%,-50%) rotate(${rot}deg)`;
+  card.style.transition='transform .08s ease-in';
+  card.style.transform=`${base} scale(.88)`;
+  clearTimeout(card._hbt);
+  card._hbt=setTimeout(()=>{
+    card.style.transition='transform .45s cubic-bezier(.34,1.56,.64,1)';
+    card.style.transform=`${base} scale(1)`;
+  },0);
+  setTimeout(()=>{ card.style.transition=''; },780);
+}
+/* teleport card → spring về trung tâm màn hình */
+function softFocusCard(card, {haptic=true, blur=true}={}){
+  if(focusedCard===card) return;
+  if(focusedCard) unfocusCard();
+  const rot=parseFloat(card.dataset.rot)||0;
+  const r=card.getBoundingClientRect();
+  const vx=window.innerWidth/2, vy=window.innerHeight/2;
+  const dx=(r.left+r.width/2)-vx, dy=(r.top+r.height/2)-vy;
+  card._sd={parent:card.parentNode, left:card.style.left, top:card.style.top, zi:card.style.zIndex};
+  card.style.position='fixed';
+  card.style.left=vx+'px';
+  card.style.top=vy+'px';
+  card.style.transition=haptic?'none':'transform .42s cubic-bezier(.34,1.56,.64,1)';
+  card.style.transform=haptic
+    ?`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) rotate(${rot}deg) scale(.88)`
+    :`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) rotate(${rot}deg) scale(1)`;
+  card.style.zIndex='1';
+  document.getElementById('card-spotlight').appendChild(card);
+  if(blur) document.getElementById('board-blur').classList.add('show');
+  focusedCard=card;
+  if(haptic){
+    clearTimeout(card._hbt);
+    card._hbt=setTimeout(()=>{
+      card.style.transition='transform .48s cubic-bezier(.34,1.56,.64,1)';
+      card.style.transform=`translate(-50%,-50%) rotate(0deg) scale(1)`;
+    },0);
+    setTimeout(()=>{ card.style.transition=''; },500);
+  } else {
+    setTimeout(()=>{
+      card.style.transition='transform .42s cubic-bezier(.34,1.56,.64,1)';
+      card.style.transform=`translate(-50%,-50%) rotate(0deg) scale(1)`;
+      setTimeout(()=>{ card.style.transition=''; },450);
+    },0);
+  }
+}
+/* haptic zoom (photo01): bay lên giữa màn hình với spring */
+function focusCard(card){
+  if(focusedCard===card){ unfocusCard(); return; }
+  if(focusedCard) unfocusCard();
+  focusedCard=card;
+  bringCardToTop(card);
+  card.style.zIndex='210';
+  document.getElementById('board-blur').classList.add('show');
+  const rot=parseFloat(card.dataset.rot)||0;
+  const rect=card.getBoundingClientRect();
+  const cx=window.innerWidth/2, cy=window.innerHeight/2;
+  const dx=cx-(rect.left+rect.width/2), dy=cy-(rect.top+rect.height/2);
+  const scale=Math.min(window.innerWidth*.88/card.offsetWidth,
+                       window.innerHeight*.82/card.offsetHeight, 2.2);
+  card.style.transition='transform .07s ease-in';
+  card.style.transform=`translate(calc(-50% + ${dx*.25}px),calc(-50% + ${dy*.25}px)) rotate(${rot}deg) scale(.95)`;
+  setTimeout(()=>{
+    card.style.transition='transform .42s cubic-bezier(.34,1.56,.64,1)';
+    card.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) rotate(${rot}deg) scale(${scale})`;
+  },70);
+}
+function unfocusCard(){
+  if(!focusedCard)return;
+  document.getElementById('board-blur').classList.remove('show');
+  const card=focusedCard; focusedCard=null;
+  const d=card._sd;
+  if(d){
+    card._sd=null;
+    const rot=parseFloat(card.dataset.rot)||0;
+    d.parent.appendChild(card);
+    card.style.position='';
+    card.style.left=d.left;
+    card.style.top=d.top;
+    card.style.transform=`translate(-50%,-50%) rotate(${rot}deg)`;
+    card.style.zIndex=d.zi;
+  } else {
+    const rot=parseFloat(card.dataset.rot)||0;
+    card.style.transition='transform .28s cubic-bezier(.4,0,.2,1)';
+    card.style.transform=`translate(-50%,-50%) rotate(${rot}deg) scale(1)`;
+  }
+}
+
+function wireCardZoom(){
+  const overlay=document.getElementById('card-zoom');
+  const frame=document.getElementById('card-zoom-frame');
+  function openPhoto(src,note,gif){
+    document.getElementById('lightbox-img').src=src;
+    document.getElementById('lightbox-note-text').textContent=note||'';
+    const lg=document.getElementById('lightbox-gif');
+    lg.src=gif||''; lg.style.display=gif?'block':'none';
+    document.getElementById('photo-lightbox').classList.add('open');
+  }
+  function openZoomImg(src,note=''){
+    frame.innerHTML=`<div class="zoom-photo-wrap"><img src="${src}" alt="">${note?`<p class="zoom-note">${note}</p>`:''}</div>`;
+    overlay.classList.add('open');
+  }
+  function closeZoom(){ overlay.classList.remove('open'); frame.innerHTML=''; }
+  document.getElementById('card-zoom-close').addEventListener('click',closeZoom);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)closeZoom();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){unfocusCard();closeZoom();}});
+  /* click từng thẻ → haptic focus + blur */
+  board.querySelectorAll('.card').forEach(card=>{
+    let pdx,pdy;
+    card.addEventListener('pointerdown',e=>{
+      if(e.target.closest('.closeb,iframe,.lmap,.playb,.sc-play,.sp,.zin,.zout'))return;
+      pdx=e.clientX; pdy=e.clientY;
+    });
+    card.addEventListener('pointerup',e=>{
+      if(card._sd) return;
+      if(pdx===undefined)return;
+      const moved=Math.abs(e.clientX-pdx)>8||Math.abs(e.clientY-pdy)>8;
+      pdx=undefined;
+      if(moved)return;
+      /* bouquet / youtube / soundcloud / config: chỉ đưa lên trên */
+      if(card.querySelector('.bouquet-float,.yt,.sc-card')||card.classList.contains('card-flip')){bringCardToTop(card);return;}
+      /* các card còn lại: haptic + blur + spring về trung tâm */
+      softFocusCard(card);
+    });
+  });
+  /* swipe nền → cycle */
+  { let bsx,bsy;
+    stages.book.addEventListener('pointerdown',e=>{
+      if(e.target.closest('.card,.hint-tap'))return;
+      bsx=e.clientX; bsy=e.clientY;
+    });
+    stages.book.addEventListener('pointerup',e=>{
+      if(bsx===undefined)return;
+      const dx=e.clientX-bsx,dy=e.clientY-bsy; bsx=undefined;
+      if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5) cycleCards(dx>0?'right':'left');
+    });
+  }
+}
+
+function polaroidHTML(p){
+  return `<span class="closeb">✕</span><span class="tape"></span>
+    <div class="polaroid"><img src="${p.src}" alt=""><span class="num">${p.num}</span></div>`;
+}
+
+function scratchHTML(p){
+  return `<span class="closeb">✕</span><span class="tape"></span>
+    <div class="scratch">
+      <div class="scratch-wrap">
+        <img src="${p.src}" alt="">
+        <canvas width="212" height="268"></canvas>
+      </div>
+      <span class="num">${p.num}</span>
+    </div>`;
+}
+
+/* nút đóng, media và phóng to bản đồ */
+function wireCardButtons(){
+  board.querySelectorAll(".closeb").forEach(b=>{
+    b.addEventListener("pointerdown", e=>e.stopPropagation());
+    b.addEventListener("click", e=>{
+      e.stopPropagation();
+      const card=b.closest(".card");
+      if(card._sd){
+        const inner=card.querySelector('.msg-flip-inner');
+        if(inner){ inner.style.transition='none'; card.querySelector('.msg-flip')?.classList.remove('flipped'); requestAnimationFrame(()=>{ inner.style.transition=''; }); }
+        unfocusCard(); return;
+      }
+      card.style.transition="transform .35s ease,opacity .35s ease";
+      card.style.opacity="0"; card.style.pointerEvents="none";
+      setTimeout(()=>card.remove(),350);
+    });
+  });
+  // phát YouTube -> nhúng iframe
+  board.querySelectorAll(".yt .screen").forEach(s=>{
+    const pb=s.querySelector(".playb"); if(!pb) return;
+    pb.addEventListener("pointerdown",e=>e.stopPropagation());
+    pb.addEventListener("click",e=>{
+      e.stopPropagation();
+      const id=s.dataset.yt;
+      if(id){ stopAllAudio(); s.innerHTML=`<iframe src="https://www.youtube.com/embed/${id}?autoplay=1&start=30&enablejsapi=1" allow="autoplay" allowfullscreen></iframe>`; }
+      else pb.style.transform="scale(.9)";
+    });
+  });
+  // phát SoundCloud -> nhúng iframe
+  board.querySelectorAll(".sc-card").forEach(c=>{
+    const pb=c.querySelector(".sc-play"); if(!pb) return;
+    pb.addEventListener("pointerdown",e=>e.stopPropagation());
+    pb.addEventListener("click",e=>{
+      e.stopPropagation();
+      stopAllAudio();
+      const url=c.dataset.sc;
+      const card=c.closest(".card");
+      c.innerHTML=`<iframe width="100%" height="80" scrolling="no" frameborder="no" allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=true&color=%23ff5500&show_comments=false&show_user=true&visual=false"></iframe>`;
+    });
+  });
+  // bản đồ thời gian thực (Leaflet + OpenStreetMap + Geolocation)
+  board.querySelectorAll(".memmap .map").forEach(m=>{
+    const el = m.querySelector(".lmap");
+    if(!el || !window.L) return;
+    const lmap = L.map(el, { zoomControl:false, attributionControl:false })
+      .setView([CONFIG.map.lat, CONFIG.map.lng], 15);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19}).addTo(lmap);
+    const pinIcon = L.divIcon({
+      className:"",
+      html:`<div class="pin" style="background-image:url(${CONFIG.map.pin})"></div>`,
+      iconSize:[48,58], iconAnchor:[24,58],
+    });
+    const marker = L.marker([CONFIG.map.lat, CONFIG.map.lng], {icon:pinIcon}).addTo(lmap);
+    /* tap pin ảnh → haptic + zoom (chỉ khi thẻ map đang trong spotlight) */
+    marker.on('click', function(){
+      const card=m.closest('.card');
+      if(!card?._sd) return;
+      const pinEl=marker.getElement();
+      if(pinEl){
+        pinEl.style.transition='transform .08s ease-in';
+        pinEl.style.transform='scale(.90)';
+        setTimeout(()=>{
+          pinEl.style.transition='transform .45s cubic-bezier(.34,1.56,.64,1)';
+          pinEl.style.transform='scale(1)';
+        },0);
+      }
+      const frame=document.getElementById('card-zoom-frame');
+      frame.innerHTML=`<div class="zoom-photo-wrap"><img src="${CONFIG.map.pin}" alt=""></div>`;
+      document.getElementById('card-zoom').classList.add('open');
+    });
+    setTimeout(()=>lmap.invalidateSize(), 1200);
+    // xin vị trí thực
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(
+        pos=>{
+          const {latitude:lat, longitude:lng} = pos.coords;
+          lmap.setView([lat,lng], 16);
+          marker.setLatLng([lat,lng]);
+        },
+        ()=>{} // từ chối → giữ toạ độ mặc định
+      );
+    }
+    const zi=m.querySelector(".zin"), zo=m.querySelector(".zout");
+    zi.addEventListener("pointerdown",e=>e.stopPropagation());
+    zo.addEventListener("pointerdown",e=>e.stopPropagation());
+    zi.addEventListener("click",e=>{e.stopPropagation();lmap.zoomIn();});
+    zo.addEventListener("click",e=>{e.stopPropagation();lmap.zoomOut();});
+  });
+}
+
+/* ---------- kéo từng thẻ riêng lẻ ---------- */
+function enableDragCard(card){
+  let dragging=false,sx,sy,ox,oy,rot;
+  card.addEventListener("pointerdown",e=>{
+    if(card._sd) return;
+    if(e.target.closest(".closeb,.playb,.sp,.zin,.zout,iframe,.lmap")) return;
+    if(card._alphaTest && !card._alphaTest(e.clientX,e.clientY)) return;
+    bringCardToTop(card);
+    e.stopPropagation();
+    dragging=true;
+    card.classList.add("drag"); card.setPointerCapture(e.pointerId);
+    sx=e.clientX; sy=e.clientY;
+    ox=parseFloat(card.dataset.x); oy=parseFloat(card.dataset.y);
+    rot=parseFloat(card.dataset.rot);
+  });
+  card.addEventListener("pointermove",e=>{
+    if(!dragging) return;
+    const nx=ox+(e.clientX-sx), ny=oy+(e.clientY-sy);
+    card.dataset.x=nx; card.dataset.y=ny;
+    card.style.left=nx+"px"; card.style.top=ny+"px";
+    card.style.transform=`translate(-50%,-50%) rotate(${rot}deg)`;
+  });
+  const stop=()=>{ dragging=false; card.classList.remove("drag"); };
+  card.addEventListener("pointerup",stop);
+  card.addEventListener("pointercancel",stop);
+  card.addEventListener("lostpointercapture",stop);
+}
+
+/* ---------- kéo toàn bộ bảng ---------- */
+(function enablePan(){
+  let sx,sy,px,py,panning=false;
+  stages.book.addEventListener("pointerdown",e=>{
+    if(e.target.closest(".card")) return;
+    panning=true; stages.book.classList.add("grab");
+    stages.book.setPointerCapture(e.pointerId);
+    sx=e.clientX; sy=e.clientY; px=pan.x; py=pan.y;
+  });
+  stages.book.addEventListener("pointermove",e=>{
+    if(!panning) return;
+    pan.x=px+(e.clientX-sx); pan.y=py+(e.clientY-sy); applyPan();
+  });
+  const stop=()=>{ panning=false; stages.book.classList.remove("grab"); };
+  stages.book.addEventListener("pointerup",stop);
+  stages.book.addEventListener("pointercancel",stop);
+  stages.book.addEventListener("lostpointercapture",stop);
+})();
+
+/* ---------- lightbox phóng to ảnh (giữ 1.5 s trên thẻ cào) ---------- */
+function wireLightbox(){
+  const lb    = document.getElementById("photo-lightbox");
+  const limg  = document.getElementById("lightbox-img");
+  const lnote = document.getElementById("lightbox-note-text");
+  const lgif  = document.getElementById("lightbox-gif");
+
+  function open(src, note, gif){
+    limg.src = src;
+    lnote.textContent = note || "";
+    lgif.src = gif || "";
+    lgif.style.display = gif ? "block" : "none";
+    lb.classList.add("open");
+  }
+  function close(){
+    lb.classList.remove("open");
+    setTimeout(()=>{ limg.src=""; lgif.src=""; }, 300);
+  }
+
+  board.querySelectorAll(".scratch-wrap").forEach(wrap=>{
+    const imgSrc    = wrap.querySelector("img")?.getAttribute("src");
+    const photoData = CONFIG.photos.find(p => p.src === imgSrc);
+    if(!photoData) return;
+
+    const canvas = wrap.querySelector("canvas");
+    let holdTimer=null, moved=false, sx=0, sy=0;
+
+    function cancelHold(){ clearTimeout(holdTimer); holdTimer=null; }
+
+    canvas.addEventListener("pointerdown", e=>{
+      if(!wrap.closest('.card')?._sd) return;
+      if(canvas.style.opacity !== "0") return;
+      moved=false; sx=e.clientX; sy=e.clientY;
+      holdTimer = setTimeout(()=>{
+        if(!moved){
+          navigator.vibrate?.(80);
+          open(wrap.querySelector("img").src, photoData.note||"", photoData.gif||"");
+        }
+        cancelHold();
+      }, 600);
+    });
+
+    canvas.addEventListener("pointermove", e=>{
+      if(Math.abs(e.clientX-sx)>6 || Math.abs(e.clientY-sy)>6){ moved=true; cancelHold(); }
+    });
+    canvas.addEventListener("pointerup", cancelHold);
+    canvas.addEventListener("pointercancel", cancelHold);
+    canvas.addEventListener("contextmenu", e=>e.preventDefault());
+  });
+
+  document.getElementById("lightbox-close").addEventListener("click", close);
+  lb.addEventListener("click", e=>{ if(e.target===lb) close(); });
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape") close(); });
+}
+
+/* ---------- thẻ cào ---------- */
+function initScratch(canvas){
+  const ctx=canvas.getContext("2d");
+  const g=ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+  g.addColorStop(0,"#c9a3d6"); g.addColorStop(1,"#9a7fb0");
+  ctx.fillStyle=g; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="rgba(255,255,255,.9)"; ctx.textAlign="center";
+  ctx.font="italic 26px 'Cormorant Garamond', serif";
+  ctx.fillText("Scratch me", canvas.width/2, canvas.height/2);
+  ctx.globalCompositeOperation="destination-out";
+  let drawing=false, cleared=0;
+  const erase=(x,y)=>{ ctx.beginPath(); ctx.arc(x,y,18,0,7); ctx.fill(); };
+  const pos=e=>{ const r=canvas.getBoundingClientRect();
+    return [(e.clientX-r.left)*canvas.width/r.width,(e.clientY-r.top)*canvas.height/r.height]; };
+  canvas.addEventListener("pointerdown",e=>{
+    if(!canvas.closest('.card')?._sd) return;
+    e.stopPropagation();drawing=true;canvas.setPointerCapture(e.pointerId);erase(...pos(e));
+  });
+  canvas.addEventListener("pointermove",e=>{ if(drawing){e.stopPropagation();erase(...pos(e));} });
+  canvas.addEventListener("pointerup",e=>{
+    drawing=false;
+    // đếm pixel đã cào; tự hiện ảnh khi cào được ~50%
+    const d=ctx.getImageData(0,0,canvas.width,canvas.height).data; let c=0;
+    for(let i=3;i<d.length;i+=4*40) if(d[i]===0) c++;
+    if(c> (d.length/(4*40))*0.45){
+      canvas.style.transition="opacity .5s"; canvas.style.opacity="0";
+    }
+  });
+}
+</script>
+</body>
+</html>
