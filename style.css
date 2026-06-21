@@ -34,7 +34,7 @@ body{font-family:"Quicksand",system-ui,sans-serif;background:#e7a9b0;color:var(-
   transition:transform 1.2s ease}
 .garland-flower{position:absolute;pointer-events:none;}
 .float-rose{position:absolute;width:120px;opacity:.9;pointer-events:none;
-  animation:drift 9s ease-in-out infinite}
+  animation:drift 9s ease-in-out infinite;will-change:transform}
 @keyframes drift{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-26px) rotate(8deg)}}
 .card-inner{position:relative;height:100%;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:14px;text-align:center}
@@ -67,7 +67,7 @@ body{font-family:"Quicksand",system-ui,sans-serif;background:#e7a9b0;color:var(-
   transform:translate(-50%,-50%)}
 .card{position:absolute;transform:translate(-50%,-50%);
   filter:drop-shadow(0 14px 26px rgba(90,40,45,.28));cursor:grab;user-select:none;
-  transition:box-shadow .2s}
+  transition:box-shadow .2s;will-change:transform}
 .card.drag{cursor:grabbing;z-index:999}
 .bouquet-deco{
   position:absolute;

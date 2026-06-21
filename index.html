@@ -218,10 +218,15 @@ env.addEventListener("click", ()=>{
    ============================================================ */
 const board = document.getElementById("board");
 let pan = { x:0, y:0 };
+let _panRaf = null;
 
 function applyPan(){
-  board.style.transform = `translate(${pan.x}px,${pan.y}px)`;
-  stages.book.style.backgroundPosition = `calc(50% + ${pan.x}px) calc(50% + ${pan.y}px)`;
+  if(_panRaf) return;
+  _panRaf = requestAnimationFrame(()=>{
+    _panRaf = null;
+    board.style.transform = `translate(${pan.x}px,${pan.y}px)`;
+    stages.book.style.backgroundPosition = `calc(50% + ${pan.x}px) calc(50% + ${pan.y}px)`;
+  });
 }
 
 function makeCard(html, x, y, rot=0){
@@ -675,12 +680,17 @@ function enableDragCard(card){
     ox=parseFloat(card.dataset.x); oy=parseFloat(card.dataset.y);
     rot=parseFloat(card.dataset.rot);
   });
+  let _dragRaf=null;
   card.addEventListener("pointermove",e=>{
     if(!dragging) return;
     const nx=ox+(e.clientX-sx), ny=oy+(e.clientY-sy);
     card.dataset.x=nx; card.dataset.y=ny;
-    card.style.left=nx+"px"; card.style.top=ny+"px";
-    card.style.transform=`translate(-50%,-50%) rotate(${rot}deg)`;
+    if(_dragRaf) return;
+    _dragRaf=requestAnimationFrame(()=>{
+      _dragRaf=null;
+      card.style.left=nx+"px"; card.style.top=ny+"px";
+      card.style.transform=`translate(-50%,-50%) rotate(${rot}deg)`;
+    });
   });
   const stop=()=>{ dragging=false; card.classList.remove("drag"); };
   card.addEventListener("pointerup",stop);
