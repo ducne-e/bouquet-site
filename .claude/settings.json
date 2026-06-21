@@ -5,5 +5,19 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:3000/Happy-Birthday-v6-main/\")",
       "Bash(curl -s -o /dev/null -w \"\\\\n%{http_code}\" \"http://localhost:3000/kieumoi/bouquet-site/\")"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"c:/Users/ACER/OneDrive/Documents/duc/kieumoi/bouquet-site\" && git add -A && git diff --cached --quiet || git commit -m \"auto: $(date +%H:%M:%S)\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
   }
 }
