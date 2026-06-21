@@ -91,7 +91,6 @@ const CONFIG = {
   yin: "You're the Yin",
   yang: "to my yang",
   photos: [
-    { src:"assets/photo01.jpg", num:"01", rot:-6, note:"anh yêu em", gif:"assets/g5.gif" },
     { src:"assets/photo03.jpg", num:"03", rot:5,  note:"anh yêu em", gif:"assets/ngumpet.gif" },
     { src:"assets/photo05.jpg", num:"05", rot:-3, note:"anh yêu em", gif:"assets/weee.gif" },
     { src:"assets/photo04.jpg", num:"04", rot:4,  note:"anh yêu em", gif:"" },
@@ -99,7 +98,7 @@ const CONFIG = {
   ],
   youtube: { title:"Just the Two of Us", id:"b4iVv91Z6lY" },
   spotify: { title:"Just the Two of Us", artist:"Bill Withers", uri:"track/68lbSrXDORS51pmyjZv712" },
-  map: { pin:"assets/photo01.jpg", lat:10.7769, lng:106.7009 }, // đổi lat/lng để chọn vị trí
+  map: { pin:"assets/photo03.jpg", lat:10.7769, lng:106.7009 }, // đổi lat/lng để chọn vị trí
   soundcloud: { url:"https://soundcloud.com/mix-dbp/khmsn" },
 };
 
@@ -277,16 +276,14 @@ function buildBook(){
   }
 
   // ảnh cào
-  const sc1 = makeCard(scratchHTML(CONFIG.photos[0]), -360, -120, CONFIG.photos[0].rot);
+  const sc1 = makeCard(scratchHTML(CONFIG.photos[0]), -330, 180,  CONFIG.photos[0].rot);
   initScratch(sc1.querySelector("canvas"));
-  const sc2 = makeCard(scratchHTML(CONFIG.photos[1]), -330, 180,  CONFIG.photos[1].rot);
+  const sc2 = makeCard(scratchHTML(CONFIG.photos[1]),  300, 230,  CONFIG.photos[1].rot);
   initScratch(sc2.querySelector("canvas"));
-  const sc3 = makeCard(scratchHTML(CONFIG.photos[2]),  300, 230,  CONFIG.photos[2].rot);
+  const sc3 = makeCard(scratchHTML(CONFIG.photos[2]),  420, -200, CONFIG.photos[2].rot);
   initScratch(sc3.querySelector("canvas"));
-  const sc4 = makeCard(scratchHTML(CONFIG.photos[3]),  420, -200, CONFIG.photos[3].rot);
+  const sc4 = makeCard(scratchHTML(CONFIG.photos[3]), -150, 420,  CONFIG.photos[3].rot);
   initScratch(sc4.querySelector("canvas"));
-  const sc5 = makeCard(scratchHTML(CONFIG.photos[4]), -150, 420,  CONFIG.photos[4].rot);
-  initScratch(sc5.querySelector("canvas"));
 
   // ảnh bouquet nổi (không khung)
   const sc = makeCard(`<img class="bouquet-float" src="assets/bouquet.png" alt="" draggable="false">`, 0, 160, -8);
