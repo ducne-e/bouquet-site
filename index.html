@@ -293,6 +293,27 @@ function buildBook(){
   // ảnh bouquet nổi (không khung)
   const sc = makeCard(`<img class="bouquet-float" src="assets/bouquet.png" alt="" draggable="false">`, 0, 160, -8);
   sc.classList.add('card-bare');
+  { const hCvs=document.createElement('canvas');
+    const hCtx=hCvs.getContext('2d',{willReadFrequently:true});
+    const hImg=new Image(); hImg.crossOrigin='anonymous';
+    hImg.onload=()=>{ hCvs.width=hImg.naturalWidth; hCvs.height=hImg.naturalHeight; hCtx.drawImage(hImg,0,0); };
+    hImg.src='assets/bouquet.png';
+    sc._alphaTest=(cx,cy)=>{
+      if(!hCvs.width) return true;
+      const el=sc.querySelector('.bouquet-float'); if(!el) return true;
+      const r=el.getBoundingClientRect();
+      const icx=r.left+r.width/2, icy=r.top+r.height/2;
+      const rad=(parseFloat(sc.dataset.rot)||0)*Math.PI/180;
+      const dx=cx-icx, dy=cy-icy;
+      const urx=dx*Math.cos(rad)+dy*Math.sin(rad);
+      const ury=-dx*Math.sin(rad)+dy*Math.cos(rad);
+      const W=el.offsetWidth, H=el.offsetHeight;
+      const px=Math.round((urx+W/2)/W*hCvs.width);
+      const py=Math.round((ury+H/2)/H*hCvs.height);
+      if(px<0||py<0||px>=hCvs.width||py>=hCvs.height) return false;
+      try{ return hCtx.getImageData(px,py,1,1).data[3]>15; }catch(e){ return true; }
+    };
+  }
 
   wireLightbox();
 
@@ -647,7 +668,16 @@ function enableDragCard(card){
   card.addEventListener("pointerdown",e=>{
     if(card._sd) return;
     if(e.target.closest(".closeb,.playb,.sp,.zin,.zout,iframe,.lmap")) return;
-    if(card._alphaTest && !card._alphaTest(e.clientX,e.clientY)) return;
+    if(card._alphaTest && !card._alphaTest(e.clientX,e.clientY)){
+      card.style.pointerEvents='none';
+      const below=document.elementFromPoint(e.clientX,e.clientY);
+      card.style.pointerEvents='';
+      if(below && below!==card) below.dispatchEvent(new PointerEvent('pointerdown',{
+        bubbles:true,cancelable:e.cancelable,clientX:e.clientX,clientY:e.clientY,
+        pointerId:e.pointerId,pointerType:e.pointerType,isPrimary:e.isPrimary,pressure:e.pressure||0
+      }));
+      return;
+    }
     bringCardToTop(card);
     e.stopPropagation();
     dragging=true;
