@@ -759,10 +759,10 @@ function wireLightbox(){
 /* ---------- thẻ cào ---------- */
 function initScratch(canvas){
   const ctx=canvas.getContext("2d");
-  const g=ctx.createLinearGradient(0,0,canvas.width,canvas.height);
-  g.addColorStop(0,"#8b20b8"); g.addColorStop(1,"#5a1080");
+  const g=ctx.createLinearGradient(0,0,0,canvas.height);
+  g.addColorStop(0,"#f9d0d8"); g.addColorStop(1,"#b84a60");
   ctx.fillStyle=g; ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.shadowColor="rgba(0,0,0,0.55)"; ctx.shadowBlur=6;
+  ctx.shadowColor="rgba(90,20,35,0.65)"; ctx.shadowBlur=7;
   ctx.fillStyle="#ffffff"; ctx.textAlign="center";
   ctx.font="italic bold 27px 'Cormorant Garamond', serif";
   ctx.fillText("Scratch me", canvas.width/2, canvas.height/2);
