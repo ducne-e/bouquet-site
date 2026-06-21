@@ -91,7 +91,7 @@ body{font-family:"Quicksand",system-ui,sans-serif;background:#e7a9b0;color:var(-
 #card-spotlight>.card .closeb{opacity:1;pointer-events:auto;transform:scale(1)}
 /* thẻ lời nhắn */
 .msg{
-  background-color:#d0b38b;
+  background-color:#d5bb97;
   background-image:
     repeating-linear-gradient(transparent 0,transparent 27px,rgba(95,58,12,.38) 27px,rgba(95,58,12,.38) 28px),
     linear-gradient(to right,transparent 31px,rgba(138,52,28,.28) 31px,rgba(138,52,28,.28) 32px,transparent 32px),
