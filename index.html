@@ -30,6 +30,8 @@
   <section id="book" class="stage">
     <div id="board"></div>
     <div class="hint-tap">Happy Birthday! ebee iuu</div>
+    <button class="cycle-btn" id="cycle-left">&#8249;</button>
+    <button class="cycle-btn" id="cycle-right">&#8250;</button>
     <button id="open-popup" onclick="
       const f=document.getElementById('hb-frame');
       if(!f.src) f.src='../../Happy-Birthday-v6-main/index.html';
@@ -394,16 +396,23 @@ function cycleCards(dir){
     .sort((a,b)=>(+(a.style.zIndex)||0)-(+(b.style.zIndex)||0));
   if(!cards.length)return;
   const n=cards.length;
+  let newTop;
   if(dir==='left'){
     const top=cards[n-1];
     cards.slice(0,n-1).forEach((c,i)=>c.style.zIndex=i+2);
     top.style.zIndex=1;
+    newTop=cards[n-2];
   } else {
     const bot=cards[0];
     cards.slice(1).forEach((c,i)=>c.style.zIndex=i+1);
     bot.style.zIndex=n;
+    newTop=bot;
   }
+  if(newTop && !newTop._sd) hapticBounce(newTop);
 }
+
+document.getElementById('cycle-left').addEventListener('click',e=>{e.stopPropagation();cycleCards('left');});
+document.getElementById('cycle-right').addEventListener('click',e=>{e.stopPropagation();cycleCards('right');});
 /* ---------- haptic focus: phóng to thẻ + mờ nền ---------- */
 let focusedCard=null;
 /* haptic tại chỗ: nhấn → giữ 300ms → spring về */

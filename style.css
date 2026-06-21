@@ -205,6 +205,13 @@ body{font-family:"Quicksand",system-ui,sans-serif;background:#e7a9b0;color:var(-
   font-family:"Cormorant Garamond",serif;font-style:italic;color:#fff;font-size:18px;
   text-shadow:0 2px 10px rgba(120,40,55,.5);opacity:.9;pointer-events:none}
 /* ---------- nút & popup Happy Birthday ---------- */
+.cycle-btn{position:absolute;bottom:22px;width:46px;height:46px;border-radius:50%;border:none;
+  background:rgba(253,248,239,.88);box-shadow:0 3px 14px rgba(120,40,55,.22);
+  font-size:26px;line-height:1;cursor:pointer;color:#9a5f66;z-index:50;
+  display:grid;place-items:center;transition:transform .15s,opacity .15s;opacity:.85}
+.cycle-btn:active{transform:scale(.88)}
+#cycle-left{left:22px}
+#cycle-right{right:80px}
 #open-popup{position:fixed;bottom:22px;right:22px;z-index:50;
   width:52px;height:52px;border-radius:50%;border:none;
   background:#fdf8ef;box-shadow:0 4px 16px rgba(120,40,55,.25);
