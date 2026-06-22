@@ -131,10 +131,12 @@ function stopAllAudio(){
   });
 }
 
+const isMobile = window.innerWidth < 768;
+
 function buildGarland(){
   const g = document.getElementById("garland");
   const imgs = ["assets/mum_white.png","assets/rose_red.png","assets/peony_red.png","assets/rose_pink.png","assets/rose_white.png"];
-  const count = 26;
+  const count = isMobile ? 14 : 26;
   for(let i=0;i<count;i++){
     const t = i/(count-1);
     const sag = 4*t*(1-t);
