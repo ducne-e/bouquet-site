@@ -156,7 +156,7 @@ function buildFlowerBurst(){
   const ft = document.getElementById("flythrough");
   ft.innerHTML = "";
   const imgs = ["assets/mum_white.png","assets/rose_red.png","assets/peony_red.png","assets/rose_pink.png","assets/rose_white.png"];
-  const count = 150;
+  const count = isMobile ? 55 : 150;
   for(let i=0;i<count;i++){
     const angle = (i/count)*Math.PI*2+(Math.random()-.5)*.5;
     const dist = 30+Math.random()*55;
@@ -170,6 +170,7 @@ function buildFlowerBurst(){
     el.style.animationDelay = (Math.random()*.4)+"s";
     ft.appendChild(el);
   }
+  if(isMobile) setTimeout(()=>{ ft.innerHTML=""; }, 4000);
 }
 
 /* ---------- trình tự intro: hiện thư luôn ---------- */
