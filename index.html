@@ -646,17 +646,20 @@ function wireCardButtons(){
       document.getElementById('card-zoom').classList.add('open');
     });
     setTimeout(()=>lmap.invalidateSize(), 1200);
-    // xin vị trí thực
-    if(navigator.geolocation){
+    // xin vị trí khi người dùng nhấn vào thẻ bản đồ
+    let geoAsked = false;
+    m.closest('.card')?.addEventListener('pointerup', ()=>{
+      if(geoAsked || !navigator.geolocation) return;
+      geoAsked = true;
       navigator.geolocation.getCurrentPosition(
         pos=>{
           const {latitude:lat, longitude:lng} = pos.coords;
           lmap.setView([lat,lng], 16);
           marker.setLatLng([lat,lng]);
         },
-        ()=>{} // từ chối → giữ toạ độ mặc định
+        ()=>{}
       );
-    }
+    });
     const zi=m.querySelector(".zin"), zo=m.querySelector(".zout");
     zi.addEventListener("pointerdown",e=>e.stopPropagation());
     zo.addEventListener("pointerdown",e=>e.stopPropagation());
